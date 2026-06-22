@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Star, ExternalLink, GitBranch, Server, Code2, LogIn } from 'lucide-react'
 import heroImage from '@/images/Img-one.png'
 
@@ -18,12 +18,14 @@ const FAQS = [
 const FEATURES = [
   'Open-source, fast online code execution',
   'Write, run and save code in your browser',
-  'Support for 8+ programming languages',
+  'AI Assistant powered by GPT-4o mini',
+  'Ask AI to explain, fix, or generate code',
+  'Support for 16+ programming languages',
   'Sandboxed compilation and execution',
   'Custom stdin input support',
   'Multiple files per project',
   'Auto-save as you type',
-  'Google & email authentication',
+  'GitHub authentication',
   'Works on any device with a browser',
 ]
 
@@ -56,14 +58,104 @@ function GitHubIcon({ className }: { className?: string }) {
   )
 }
 
+function FadeIn({
+  children,
+  delay = 0,
+  className = '',
+}: {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
+      { threshold: 0.12 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        transition: `opacity 0.75s ease ${delay}ms, filter 0.75s ease ${delay}ms, transform 0.75s ease ${delay}ms`,
+        opacity: visible ? 1 : 0,
+        filter: visible ? 'blur(0px)' : 'blur(10px)',
+        transform: visible ? 'translateY(0px)' : 'translateY(28px)',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [scrollY, setScrollY] = useState(0)
+
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
     <div className="min-h-screen text-white" style={{ background: 'var(--bg)', fontFamily: 'var(--font-stack)' }}>
 
+      {/* ── PARALLAX BACKGROUND ORBS ── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 600, height: 600,
+            background: 'radial-gradient(circle, rgba(220,255,80,0.07) 0%, transparent 70%)',
+            top: '5%', left: '10%',
+            transform: `translateY(${scrollY * 0.18}px)`,
+            filter: 'blur(40px)',
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 500, height: 500,
+            background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)',
+            top: '40%', right: '5%',
+            transform: `translateY(${-scrollY * 0.12}px)`,
+            filter: 'blur(60px)',
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 400, height: 400,
+            background: 'radial-gradient(circle, rgba(220,255,80,0.05) 0%, transparent 70%)',
+            bottom: '10%', left: '30%',
+            transform: `translateY(${-scrollY * 0.08}px)`,
+            filter: 'blur(50px)',
+          }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 300, height: 300,
+            background: 'radial-gradient(circle, rgba(168,85,247,0.05) 0%, transparent 70%)',
+            top: '70%', left: '5%',
+            transform: `translateY(${scrollY * 0.1}px)`,
+            filter: 'blur(50px)',
+          }}
+        />
+      </div>
+
       {/* ── NAV ── */}
-      <nav className="sticky top-0 z-50 border-b border-white/10" style={{ background: 'var(--bg)' }}>
+      <nav className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-sm" style={{ background: 'rgba(14,14,14,0.85)' }}>
         <div className="max-w-7xl mx-auto px-16 h-[60px] flex items-center justify-between gap-8">
           <Link href="/" className="font-bold text-[17px] tracking-[0.06em] shrink-0">CODEITUP</Link>
           <div className="hidden lg:flex items-center gap-10">
@@ -98,25 +190,25 @@ export default function Home() {
       </nav>
 
       {/* ── ANNOUNCEMENT BANNER ── */}
-      <div className="border-b border-white/10 px-16 py-3 flex items-center gap-3" style={{ background: '#1a1a0a' }}>
+      <div className="relative z-10 border-b border-white/10 px-16 py-3 flex items-center gap-3" style={{ background: '#1a1a0a' }}>
         <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'var(--accent)', color: '#0e0e0e' }}>New</span>
         <p className="text-sm text-white/60">
-          CodeItUp now supports 8+ languages with sandboxed execution powered by Judge0.{' '}
+          CodeItUp now has a built-in AI Assistant (GPT-4o mini) + 16 languages with sandboxed execution.{' '}
           <Link href="/auth/register" className="underline" style={{ color: 'var(--accent)' }}>Start coding free →</Link>
         </p>
       </div>
 
       {/* ── HERO ── */}
-      <section className="border-b border-white/10">
+      <section className="relative z-10 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-16 py-20 lg:py-28">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 xl:gap-20 items-center">
-            <div>
-              <h1 className="text-[clamp(3.5rem,7vw,6rem)] font-bold leading-[1.0] tracking-[-0.03em] mb-8" style={{ color: 'var(--accent)' }}>
-                Code execution
+            <FadeIn delay={0}>
+              <h1 className="text-[clamp(3.5rem,7vw,6rem)] font-bold leading-[1.0] tracking-[-0.03em] mb-8">
+                <span className="text-[clamp(1.5rem,3vw,2.5rem)] font-semibold tracking-[0.08em] uppercase" style={{ color: 'var(--accent)' }}>AI-powered</span>
                 <br />
-                <span className="text-white">built for</span>
+                <span style={{ color: 'var(--accent)' }}>code execution</span>
                 <br />
-                <span className="text-white">every dev</span>
+                <span className="text-white">for every dev</span>
               </h1>
               <p className="text-zinc-400 text-lg leading-[1.7] mb-12 max-w-sm">
                 Programmatically run code in isolated sandboxes for instant execution in your browser. Free forever.
@@ -136,26 +228,32 @@ export default function Home() {
                 {[
                   { icon: GitBranch, label: 'Open Source' },
                   { icon: Server,    label: 'Self Hostable' },
-                  { icon: Code2,     label: '8+ Languages' },
+                  { icon: Code2,     label: 'AI Assistant' },
                 ].map(({ icon: Icon, label }) => (
                   <div key={label} className="inline-flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-[13px] text-zinc-400">
                     <Icon className="w-4 h-4 text-zinc-500" /> {label}
                   </div>
                 ))}
               </div>
-            </div>
+            </FadeIn>
 
-            <div className="rounded-lg overflow-hidden border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.6)]">
-              <Image src={heroImage} alt="CodeItUp IDE" className="w-full h-auto" priority />
-            </div>
+            <FadeIn delay={150}>
+              <div
+                className="rounded-lg overflow-hidden border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.6)]"
+                style={{ transform: `translateY(${scrollY * 0.06}px)` }}
+              >
+                <Image src={heroImage} alt="CodeItUp IDE" className="w-full h-auto" priority />
+              </div>
+            </FadeIn>
           </div>
         </div>
 
       </section>
 
       {/* ── FEATURES ── */}
-      <section className="border-b border-white/10">
+      <section className="relative z-10 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-16 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 xl:gap-24 items-center">
+          <FadeIn>
           <div>
             <p className="text-[11px] uppercase tracking-[0.25em] mb-8" style={{ color: 'var(--accent)' }}>Platform</p>
             <h2 className="text-4xl font-bold leading-[1.12] tracking-[-0.02em] mb-8">
@@ -175,7 +273,9 @@ export default function Home() {
               ))}
             </ul>
           </div>
+          </FadeIn>
 
+          <FadeIn delay={150}>
           <div className="rounded-lg overflow-hidden border border-white/10" style={{ background: '#1a1a1a' }}>
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10" style={{ background: '#222' }}>
               <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
@@ -197,12 +297,14 @@ export default function Home() {
               </div>
             </div>
           </div>
+          </FadeIn>
         </div>
       </section>
 
       {/* ── CONTACT ── */}
-      <section className="border-b border-white/10" id="contact">
+      <section className="relative z-10 border-b border-white/10" id="contact">
         <div className="max-w-7xl mx-auto px-16 py-24 text-center">
+          <FadeIn>
           <h2 className="text-5xl font-bold mb-4 tracking-tight uppercase">Contact</h2>
           <div className="w-16 h-px mx-auto mb-8" style={{ background: 'var(--accent)' }} />
           <p className="text-zinc-400 text-sm mb-16 max-w-lg mx-auto leading-relaxed">
@@ -226,12 +328,14 @@ export default function Home() {
               </div>
             ))}
           </div>
+          </FadeIn>
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <section className="border-b border-white/10" id="faq">
+      <section className="relative z-10 border-b border-white/10" id="faq">
         <div className="max-w-7xl mx-auto px-16 py-24">
+          <FadeIn>
           <h2 className="text-5xl font-bold mb-4 tracking-tight text-center uppercase">
             Frequently Asked Questions
           </h2>
@@ -254,12 +358,14 @@ export default function Home() {
               </div>
             ))}
           </div>
+          </FadeIn>
         </div>
       </section>
 
       {/* ── CTA ── */}
-      <section className="border-b border-white/10" style={{ background: '#111' }}>
+      <section className="relative z-10 border-b border-white/10" style={{ background: '#111' }}>
         <div className="max-w-7xl mx-auto px-16 py-32 text-center">
+          <FadeIn>
           <h2 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight leading-tight">
             Join the future of<br />
             <span style={{ color: 'var(--accent)' }}>building</span>
@@ -272,11 +378,12 @@ export default function Home() {
             style={{ background: 'var(--accent)', color: '#0e0e0e' }}>
             Start for free
           </Link>
+          </FadeIn>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: 'var(--bg)' }}>
+      <footer className="relative z-10" style={{ background: 'var(--bg)' }}>
         <div className="max-w-7xl mx-auto px-16 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div>

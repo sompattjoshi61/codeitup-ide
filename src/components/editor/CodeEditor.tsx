@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import {
   Play, Save, Plus, Trash2, Code2, ChevronLeft,
-  Loader2, FileCode, Terminal, X, Check
+  Loader2, FileCode, Terminal, X, Check, Sparkles
 } from 'lucide-react'
+import AIPanel from './AIPanel'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES, getLanguageByName } from '@/lib/languages'
 import toast from 'react-hot-toast'
@@ -45,7 +46,32 @@ export default function CodeEditor({
   const [showStdin, setShowStdin] = useState(false)
   const [newFileName, setNewFileName] = useState('')
   const [showNewFile, setShowNewFile] = useState(false)
+  const [showAI, setShowAI] = useState(false)
+  const [aiWidth, setAiWidth] = useState(320)
+  const isResizing = useRef(false)
   const saveTimer = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isResizing.current) return
+      const container = document.getElementById('editor-ai-container')
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      const newWidth = rect.right - e.clientX
+      setAiWidth(Math.min(Math.max(newWidth, 240), 600))
+    }
+    function onMouseUp() {
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [])
 
   const lang = getLanguageByName(project.language)
   const activeFile = files.find(f => f.id === activeFileId)
@@ -158,6 +184,14 @@ export default function CodeEditor({
         </div>
 
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowAI(!showAI)}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+            style={showAI
+              ? { background: '#DCFF50', color: '#0e0e0e' }
+              : { background: 'rgba(220,255,80,0.1)', color: '#DCFF50', border: '1px solid rgba(220,255,80,0.2)' }
+            }>
+            <Sparkles className="w-3.5 h-3.5" /> AI
+          </button>
           <button onClick={() => setShowStdin(!showStdin)}
             className="text-xs text-white/40 hover:text-white/80 px-3 py-1.5 rounded-lg glass hover:bg-white/8 transition-all flex items-center gap-1.5">
             <Terminal className="w-3.5 h-3.5" /> Input
@@ -222,7 +256,8 @@ export default function CodeEditor({
           </div>
         </div>
 
-        {/* Editor + Output */}
+        {/* Editor + Output + AI Panel */}
+        <div id="editor-ai-container" className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Stdin input */}
           {showStdin && (
@@ -303,6 +338,41 @@ export default function CodeEditor({
               </div>
             </div>
           )}
+        </div>
+
+        {/* AI Panel */}
+        {showAI && (
+          <>
+            {/* Drag handle */}
+            <div
+              onMouseDown={() => {
+                isResizing.current = true
+                document.body.style.cursor = 'col-resize'
+                document.body.style.userSelect = 'none'
+              }}
+              className="w-1 flex-shrink-0 bg-white/[0.04] hover:bg-[#DCFF50]/40 active:bg-[#DCFF50]/60 cursor-col-resize transition-colors relative group"
+            >
+              {/* Visual grip dots */}
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 flex flex-col overflow-hidden" style={{ width: aiWidth }}>
+              <AIPanel
+                code={content}
+                language={lang.name}
+                onClose={() => setShowAI(false)}
+                onInsertCode={(code) => {
+                  setContent(code)
+                  autoSave(code)
+                }}
+              />
+            </div>
+          </>
+        )}
         </div>
       </div>
     </div>
